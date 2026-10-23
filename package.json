@@ -1,0 +1,13 @@
+{
+  "name": "ai-chatbot-testing",
+  "version": "1.0.0",
+  "description": "Test plan, test cases and Playwright automation for an AI chatbot",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.2"
+  },
+  "license": "MIT"
+}
