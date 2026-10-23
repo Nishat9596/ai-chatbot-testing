@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ShopBot – Demo Chatbot</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 520px; margin: 40px auto; }
+    #chat { border: 1px solid #ccc; border-radius: 8px; height: 360px; overflow-y: auto; padding: 12px; }
+    .msg { margin: 6px 0; padding: 8px 12px; border-radius: 12px; max-width: 80%; }
+    .user { background: #dbeafe; margin-left: auto; }
+    .bot { background: #f3f4f6; }
+    form { display: flex; gap: 8px; margin-top: 8px; }
+    input { flex: 1; padding: 8px; }
+    #error { color: #b91c1c; min-height: 1.2em; }
+  </style>
+</head>
+<body>
+  <h1>ShopBot</h1>
+  <div id="chat" aria-live="polite" data-testid="chat"></div>
+  <form id="form">
+    <input id="input" data-testid="chat-input" placeholder="Type a message..." autocomplete="off">
+    <button id="send" data-testid="send" type="submit" disabled>Send</button>
+  </form>
+  <div id="error" data-testid="error" role="alert"></div>
+
+  <script>
+    // A small rule-based bot used as the system under test.
+    const MAX_LEN = 500;
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('input');
+    const send = document.getElementById('send');
+    const error = document.getElementById('error');
+    let waitingForOrderId = false;
+
+    function add(text, who) {
+      const div = document.createElement('div');
+      div.className = 'msg ' + who;
+      div.dataset.testid = who + '-message';
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function reply(raw) {
+      const text = raw.toLowerCase();
+      if (waitingForOrderId) {
+        const match = raw.match(/\b\d{5}\b/);
+        if (match) {
+          waitingForOrderId = false;
+          return `Order ${match[0]} is out for delivery and should arrive tomorrow.`;
+        }
+        return 'Please send your 5-digit order number, for example 12345.';
+      }
+      if (/\b(hack|steal|password|credit card number)\b/.test(text)) {
+        return "Sorry, I can't help with that. I can help with orders, refunds and store hours.";
+      }
+      if (/\b(hi|hello|hey)\b/.test(text)) return 'Hello! How can I help you today?';
+      if (/\b(order|track|delivery)\b/.test(text)) {
+        waitingForOrderId = true;
+        return 'Sure, I can check that. What is your order number?';
+      }
+      if (/\b(refund|return)\b/.test(text)) return 'You can return items within 14 days for a full refund.';
+      if (/\b(hours|open|timing)\b/.test(text)) return 'We are open every day from 10 AM to 10 PM.';
+      return "Sorry, I didn't understand that. I can help with orders, refunds and store hours.";
+    }
+
+    input.addEventListener('input', () => {
+      send.disabled = input.value.trim() === '';
+      error.textContent = '';
+    });
+
+    document.getElementById('form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const value = input.value.trim();
+      if (!value) return;
+      if (value.length > MAX_LEN) {
+        error.textContent = `Message is too long (max ${MAX_LEN} characters).`;
+        return;
+      }
+      add(value, 'user');
+      input.value = '';
+      send.disabled = true;
+      setTimeout(() => add(reply(value), 'bot'), 300);
+    });
+
+    add('Hi, I am ShopBot. Ask me about orders, refunds or store hours.', 'bot');
+  </script>
+</body>
+</html>
